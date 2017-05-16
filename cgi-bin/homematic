@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Content-type: text/plain"
+echo ""
+
+read POST_STRING
+pos=($(echo $POST_STRING | jq -r '.position'))
+
+sudo lxc-attach -n yahm -- wget -qO- "http://127.0.0.1/config/xmlapi/statechange.cgi?ise_id=1246&new_value=$pos" > /dev/null 2>&1 &
+

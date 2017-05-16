@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Content-type: text/plain"
+echo ""
+
+read POST_STRING
+activity=$(echo $POST_STRING | jq -r '.activity')
+
+sudo -u smarthome harmony --harmony_ip HARMONY_IP start_activity --activity $activity > /dev/null 2>&1 &
+

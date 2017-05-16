@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo "Content-type: text/plain"
+echo ""
+
+sudo -u smarthome harmony --harmony_ip HARMONY_IP power_off > /dev/null 2>&1 &
+

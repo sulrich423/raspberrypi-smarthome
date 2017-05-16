@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Content-type: text/plain"
+echo ""
+
+read POST_STRING
+args=($(echo $POST_STRING | jq -r '.unitCode,.command'))
+
+sudo send -p 5 SOCKET_SYSTEM_CODE ${args[0]} ${args[1]} > /dev/null 2>&1 &
+

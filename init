@@ -1,0 +1,190 @@
+#!/bin/bash
+
+# . <(curl -s 'https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/init')
+
+info() {
+  echo -e "\e[32m$1 \e[0m"
+}
+finished() {
+  echo -e "\e[32mdone\e[0m"
+}
+
+install() {
+  info "installing $1"
+  apt-get install -y --force-yes $1 > /dev/null 2>&1
+  finished
+}
+
+uncomment() {
+  content=$1
+  filename=$2
+  sed -i "/$content/s/^#//" $filename
+}
+
+gitclone() {
+  info "cloning git repository $1"
+  sudo -u smarthome -i git clone https://github.com/sulrich423/$1.git /home/smarthome/$1 > /dev/null 2>&1
+  finished
+}
+
+pythoninstall() {
+  info "installing $1"
+(
+  cd /home/smarthome/$1
+  sudo -u smarthome python3 setup.py install --user > /dev/null 2>&1
+)
+  finished
+}
+
+info 'enter password for root user'
+passwd
+
+info 'allowing ssh login for root'
+sed -i /^PermitRootLogin/s/without-password/yes/ /etc/ssh/sshd_config
+service ssh restart
+finished
+
+info 'disable ssh.service and enable ssh.socket'
+systemctl disable ssh.service > /dev/null 2>&1
+systemctl enable ssh.socket > /dev/null 2>&1
+finished
+
+info 'Setting up WLAN. Listing available SSIDs'
+wpa_cli scan > /dev/null 2>&1
+sleep 2
+wpa_cli scan_results | tail -n +3 | cut -f 5
+echo "enter SSID"
+read ssid
+echo "enter password"
+read password
+wpa_passphrase "$ssid" "$password" | grep -v '#' >> /etc/wpa_supplicant/wpa_supplicant.conf
+wpa_cli reconfigure > /dev/null
+info 'WLAN configuration finished'
+
+info 'changing .bashrc'
+uncomment 'PS1=' '/root/.bashrc'
+uncomment 'umask 022' '/root/.bashrc'
+uncomment 'export LS_OPTIONS' '/root/.bashrc'
+uncomment 'eval "`dircolors`"' '/root/.bashrc'
+uncomment 'alias ls' '/root/.bashrc'
+uncomment 'alias ll' '/root/.bashrc'
+
+uncomment 'alias ll' '/etc/skel/.bashrc'
+
+info 'enabling Jessie backports apt repo'
+echo 'deb http://ftp.debian.org/debian jessie-backports main' >> /etc/apt/sources.list
+info 'apt-get update... '
+apt-get update > /dev/null 2>&1
+finished
+install vim
+install screen
+install python3
+install python3-pip
+install git
+install wiringpi
+install libi2c-dev
+install jq
+install apache2
+install 'python-certbot-apache -t jessie-backports'
+
+info 'configuring vim'
+echo 'syntax on' > .vimrc
+echo 'syntax on' > /etc/skel/.vimrc
+finished
+
+info 'configuring screen'
+(
+cd ~/
+wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/.screenrc > /dev/null 2>&1
+cp .screenrc /etc/skel/.screenrc
+)
+finished
+
+info 'Adding user smarthome. Enter password and userinformation'
+adduser --quiet smarthome
+
+info 'modifying sudoers'
+sed -i /secure_path/s/\"$/:\\/home\\/smarthome\\/bin\"/ /etc/sudoers
+echo '%smarthome ALL=NOPASSWD:/home/smarthome/bin/send,/usr/bin/lxc-attach' >> /etc/sudoers
+echo 'www-data ALL=(smarthome)NOPASSWD:/home/smarthome/bin/' >> /etc/sudoers
+finished
+
+info 'adding apache user to group smarthome'
+usermod -G smarthome www-data
+finished
+
+sudo -u smarthome mkdir /home/smarthome/bin
+sudo -u smarthome mkdir /home/smarthome/cgi-bin
+
+gitclone csrmesh
+gitclone pyharmony
+gitclone raspberry-remote
+
+pythoninstall pyharmony
+pythoninstall csrmesh
+info 'installing raspberry-remote'
+(
+cd /home/smarthome/raspberry-remote
+sudo -u smarthome make send
+)
+finished
+
+info 'copying to bin'
+sudo -u smarthome cp /home/smarthome/raspberry-remote/send /home/smarthome/bin/
+sudo -u smarthome cp /home/smarthome/.local/bin/* /home/smarthome/bin/
+finished
+
+info 'installing cgi-scripts'
+(
+cd /home/smarthome/cgi-bin
+sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/harmony_activity_off > /dev/null 2>&1
+sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/harmony_activity_on > /dev/null 2>&1
+sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/harmony_command > /dev/null 2>&1
+sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/homematic > /dev/null 2>&1
+sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/move > /dev/null 2>&1
+sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/socket > /dev/null 2>&1
+chmod ug+x *
+finished
+
+info 'configuring cgi-scripts'
+info 'enter harmony ip'
+read harmony_ip
+sed -i s/HARMONY_IP/$harmony_ip/ harmony_activity_off harmony_activity_on harmony_command
+info 'enter pin for move'
+read move_pin
+sed -i s/MOVE_PIN/$move_pin/ move
+info 'enter bluetooth destination for move'
+read move_dest
+sed -i s/MOVE_DEST/$move_dest/ move
+info 'enter system code for socket'
+read socket_system_code
+sed -i s/SOCKET_SYSTEM_CODE/$socket_system_code/ socket
+)
+finished
+
+info 'running certbot for letsencrypt certificate'
+certbot --apache
+
+info 'enabling apache cgi module'
+a2enmod cgi > /dev/null 2>&1
+finished
+
+info 'configuring apache'
+(
+cd /etc/apache2/conf-available
+rm serve-cgi-bin.conf
+wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/apache/serve-cgi-bin.conf > /dev/null 2>&1
+)
+finished
+
+info 'enter password for basic authentication'
+htpasswd -c /etc/apache2/.htpasswd sulrich
+finished
+
+info 'restarting apache'
+service apache2 restart
+finished
+
+#wget -nv -O- https://raw.githubusercontent.com/leonsio/YAHM/master/yahm-init | sudo -E  bash -s quickinstall -
+#yahm-module -m hm-mod-rpi-pcb enable
+

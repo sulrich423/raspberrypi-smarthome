@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Content-type: text/plain"
+echo ""
+
+read POST_STRING
+pos=($(echo $POST_STRING | jq -r '.position'))
+
+sudo -u smarthome csrmesh-cli --pin MOVE_PIN --dest MOVE_DEST --position $pos move > /dev/null 2>&1 &
+

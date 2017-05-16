@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Content-type: text/plain"
+echo ""
+
+read POST_STRING
+args=($(echo $POST_STRING | jq -r '.device_id,.command'))
+
+sudo -u smarthome harmony --harmony_ip HARMONY_IP send_command --device_id ${args[0]} --command ${args[1]} > /dev/null 2>&1 &
+
