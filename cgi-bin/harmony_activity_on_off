@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Content-type: text/plain"
+echo ""
+
+read POST_STRING
+args=($(echo $POST_STRING | jq -r '.activity,.sleep'))
+
+sudo -u smarthome harmony --harmony_ip 192.168.178.29 start_activity --activity ${args[0]} > /dev/null 2>&1 && sleep ${args[1]} && sudo -u smarthome harmony --harmony_ip 192.168.178.29 power_off > /dev/null 2>&1 &
+

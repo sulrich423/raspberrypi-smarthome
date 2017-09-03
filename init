@@ -139,6 +139,7 @@ info 'installing cgi-scripts'
 cd /home/smarthome/cgi-bin
 sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/harmony_activity_off > /dev/null 2>&1
 sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/harmony_activity_on > /dev/null 2>&1
+sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/harmony_activity_on_off > /dev/null 2>&1
 sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/harmony_command > /dev/null 2>&1
 sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/homematic > /dev/null 2>&1
 sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/move > /dev/null 2>&1
