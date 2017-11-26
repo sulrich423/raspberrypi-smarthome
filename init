@@ -144,6 +144,7 @@ sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-
 sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/homematic > /dev/null 2>&1
 sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/move > /dev/null 2>&1
 sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/socket > /dev/null 2>&1
+sudo -u smarthome wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/cgi-bin/vu_plus_off > /dev/null 2>&1
 chmod ug+x *
 finished
 
@@ -160,6 +161,9 @@ sed -i s/MOVE_DEST/$move_dest/ move
 info 'enter system code for socket'
 read socket_system_code
 sed -i s/SOCKET_SYSTEM_CODE/$socket_system_code/ socket
+info 'enter vu+ ip'
+read vu_plus_ip
+sed -i s/VU+_IP/$vu_plus_ip/ vu_plus_off
 )
 finished
 
