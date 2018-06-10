@@ -40,17 +40,12 @@ info 'enter password for root user'
 passwd
 
 info 'allowing ssh login for root'
-sed -i /^PermitRootLogin/s/without-password/yes/ /etc/ssh/sshd_config
+echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
 service ssh restart
 finished
 
-info 'disable ssh.service and enable ssh.socket'
-systemctl disable ssh.service > /dev/null 2>&1
-systemctl enable ssh.socket > /dev/null 2>&1
-finished
-
 info 'Setting up WLAN. Listing available SSIDs'
-wpa_cli scan > /dev/null 2>&1
+iwlist scan > /dev/null 2>&1
 sleep 2
 wpa_cli scan_results | tail -n +3 | cut -f 5
 echo "enter SSID"
@@ -58,7 +53,7 @@ read ssid
 echo "enter password"
 read password
 wpa_passphrase "$ssid" "$password" | grep -v '#' >> /etc/wpa_supplicant/wpa_supplicant.conf
-wpa_cli reconfigure > /dev/null
+wpa_cli -i wlan0 reconfigure > /dev/null
 info 'WLAN configuration finished'
 
 info 'changing .bashrc'
@@ -71,8 +66,8 @@ uncomment 'alias ll' '/root/.bashrc'
 
 uncomment 'alias ll' '/etc/skel/.bashrc'
 
-info 'enabling Jessie backports apt repo'
-echo 'deb http://ftp.debian.org/debian jessie-backports main' >> /etc/apt/sources.list
+info 'enabling Stretch backports apt repo'
+echo 'deb http://ftp.debian.org/debian stretch-backports main' >> /etc/apt/sources.list
 info 'apt-get update... '
 apt-get update > /dev/null 2>&1
 finished
@@ -85,7 +80,7 @@ install wiringpi
 install libi2c-dev
 install jq
 install apache2
-install 'python-certbot-apache -t jessie-backports'
+install 'python-certbot-apache -t stretch-backports'
 
 info 'configuring vim'
 echo 'syntax on' > .vimrc
