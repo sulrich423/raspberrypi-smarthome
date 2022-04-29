@@ -163,6 +163,5 @@ info 'restarting apache'
 systemctl restart apache2
 finished
 
-#wget -nv -O- https://raw.githubusercontent.com/sulrich423/YAHM/master/yahm-init | sudo -E  bash -s quickinstall -
-#yahm-module -m hm-mod-rpi-pcb enable
+# see https://github.com/sulrich423/piVCCU/blob/master/docs/setup/raspberrypi.md
 
