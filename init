@@ -44,30 +44,14 @@ echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
 service ssh restart
 finished
 
-info 'Setting up WLAN. Listing available SSIDs'
-iwlist scan > /dev/null 2>&1
-sleep 2
-wpa_cli scan_results | tail -n +3 | cut -f 5
-echo "enter SSID"
-read ssid
-echo "enter password"
-read password
-wpa_passphrase "$ssid" "$password" | grep -v '#' >> /etc/wpa_supplicant/wpa_supplicant.conf
-wpa_cli -i wlan0 reconfigure > /dev/null
-info 'WLAN configuration finished'
-
 info 'changing .bashrc'
-uncomment 'PS1=' '/root/.bashrc'
-uncomment 'umask 022' '/root/.bashrc'
 uncomment 'export LS_OPTIONS' '/root/.bashrc'
-uncomment 'eval "`dircolors`"' '/root/.bashrc'
+uncomment 'eval "$(dircolors)"' '/root/.bashrc'
 uncomment 'alias ls' '/root/.bashrc'
 uncomment 'alias ll' '/root/.bashrc'
 
-uncomment 'alias ll' '/etc/skel/.bashrc'
+uncomment 'alias ll' '/home/smarthome/.bashrc'
 
-info 'enabling Stretch backports apt repo'
-echo 'deb http://ftp.debian.org/debian stretch-backports main' >> /etc/apt/sources.list
 info 'apt-get update... '
 apt-get update > /dev/null 2>&1
 finished
@@ -76,27 +60,29 @@ install screen
 install python3
 install python3-pip
 install git
-install wiringpi
 install libi2c-dev
 install jq
 install apache2
-install 'python-certbot-apache -t stretch-backports'
+install snapd
 
-info 'configuring vim'
-echo 'syntax on' > .vimrc
-echo 'syntax on' > /etc/skel/.vimrc
+info 'installing certbot'
+snap install core; snap refresh core
+snap install --classic certbot
+ln -s /snap/bin/certbot /usr/bin/certbot
+finished
+
+info 'installing wiringpi'
+wget https://github.com/sulrich423/wiringPi/releases/download/2.46/wiringpi-2.46.deb
+apt install ./wiringpi-2.46.deb
 finished
 
 info 'configuring screen'
 (
 cd ~/
 wget https://raw.githubusercontent.com/sulrich423/raspberrypi-smarthome/master/.screenrc > /dev/null 2>&1
-cp .screenrc /etc/skel/.screenrc
+cp .screenrc /home/smarthome/.screenrc
 )
 finished
-
-info 'Adding user smarthome. Enter password and userinformation'
-adduser --quiet smarthome
 
 info 'modifying sudoers'
 sed -i /secure_path/s/\"$/:\\/home\\/smarthome\\/bin\"/ /etc/sudoers
@@ -111,12 +97,10 @@ finished
 sudo -u smarthome mkdir /home/smarthome/bin
 sudo -u smarthome mkdir /home/smarthome/cgi-bin
 
-gitclone csrmesh
 gitclone pyharmony
 gitclone raspberry-remote
 
 pythoninstall pyharmony
-pythoninstall csrmesh
 info 'installing raspberry-remote'
 (
 cd /home/smarthome/raspberry-remote
@@ -147,12 +131,6 @@ info 'configuring cgi-scripts'
 info 'enter harmony ip'
 read harmony_ip
 sed -i s/HARMONY_IP/$harmony_ip/ harmony_activity_off harmony_activity_on harmony_command
-info 'enter pin for move'
-read move_pin
-sed -i s/MOVE_PIN/$move_pin/ move
-info 'enter bluetooth destination for move'
-read move_dest
-sed -i s/MOVE_DEST/$move_dest/ move
 info 'enter system code for socket'
 read socket_system_code
 sed -i s/SOCKET_SYSTEM_CODE/$socket_system_code/ socket
@@ -182,9 +160,9 @@ htpasswd -c /etc/apache2/.htpasswd sulrich
 finished
 
 info 'restarting apache'
-service apache2 restart
+systemctl restart apache2
 finished
 
-#wget -nv -O- https://raw.githubusercontent.com/leonsio/YAHM/master/yahm-init | sudo -E  bash -s quickinstall -
+#wget -nv -O- https://raw.githubusercontent.com/sulrich423/YAHM/master/yahm-init | sudo -E  bash -s quickinstall -
 #yahm-module -m hm-mod-rpi-pcb enable
 
