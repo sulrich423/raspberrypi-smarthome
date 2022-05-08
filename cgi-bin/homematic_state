@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "Content-type: text/plain"
+echo ""
+
+sudo lxc-attach --lxcpath /var/lib/piVCCU3 -n lxc -- wget -qO- "http://127.0.0.1/config/xmlapi/state.cgi?datapoint_id=1423"
